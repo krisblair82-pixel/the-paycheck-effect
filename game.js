@@ -22,7 +22,8 @@ const CONFIG = {
   tutor: 26,
   rootCanalEmployee: 315,
   crownEmployee: 702,
-  netPaySafeguard: 250,
+  netPaySafeguard: 750,
+  missedBenefitPremium: 240,
   normalBenefitDeduction: 240,
   benefitRecoveryMultiplier: 1.5
 };
@@ -48,12 +49,12 @@ function card(x, cls=''){return `<section class="card ${cls}">${x}</section>`}
 function ledger(rows){return `<div class="ledger">${rows.map(r=>`<div class="row ${r.total?'total':''}"><span>${r[0]}</span><strong class="${r[2]||''}">${r[1]}</strong></div>`).join('')}</div>`}
 
 function landing(){
-  shell(`<div class="hero"><div class="eyebrow">Leadership simulation</div><h1>The Paycheck Effect</h1><p class="lead">You have a new job, a family of four, and a normal life outside of work. See what happens when several missed deductions catch up on one paycheck.</p>${card(`<h2>Your starting point</h2><p>You were hired to work at the <strong>University of Colorado</strong>. CU now has a biweekly pay schedule.</p><p>You were hired on <strong>May 1</strong>, so you are eligible for benefits immediately. Starting a new job is busy. Between learning your role, meeting coworkers and getting through onboarding, you <strong>forgot to elect your benefits</strong>.</p>${button('Begin the experience','Start with your first paycheck','may21','primary')}`)}<p class="note center">No personal information is collected or saved.</p></div>`);
+  shell(`<div class="hero"><div class="eyebrow">Leadership simulation</div><h1>The Paycheck Effect</h1><p class="lead">You have a new job, a family of four, and a normal life outside of work. See how your first few months at CU affect your household budget.</p>${card(`<h2>Your starting point</h2><p>You were hired to work at the <strong>University of Colorado</strong>. CU now has a biweekly pay schedule.</p><p>You were hired on <strong>May 1</strong>, so you are eligible for benefits immediately. Starting a new job is busy. Between learning your role, meeting coworkers and getting through onboarding, you <strong>forgot to elect your benefits</strong>.</p>${button('Begin the experience','Start with your first paycheck','may21','primary')}`)}<p class="note center">No personal information is collected or saved.</p></div>`);
 }
 function may21(){shell(card(`<div class="eyebrow">Paycheck 1</div><h2>May 21</h2><div class="money">$800</div><p>Earnings. Your benefit elections have not been processed, so no benefit premiums are deducted.</p><div class="consequence">This paycheck goes toward <strong>May rent and living expenses</strong>. Nothing is left to carry into June.</div>${button('Continue to June 4','Your second paycheck','june4','primary')}`));}
-function june4(){shell(card(`<div class="eyebrow">Paycheck 2</div><h2>June 4</h2><div class="money">$1,400</div><p>Your benefit deductions still have not started. Your May premiums remain outstanding.</p>${ledger([['Average Denver 2-bedroom rent',money(CONFIG.rentMonthly)],['Set aside half for June rent',`−${money(CONFIG.rentHalf)}`,'negative'],['Cash remaining from this check',money(CONFIG.june4CashAfterRentReserve),'positive']])}<p class="note">The remaining $${CONFIG.june4CashAfterRentReserve} stays available. It does not disappear from the simulation.</p>${button('Continue','There is another issue with your elections','retirement','primary')}`));}
-function retirement(){shell(card(`<div class="eyebrow">Mandatory retirement</div><h2>You forgot to elect a mandatory retirement plan.</h2><p>You are defaulted into the <strong>PERA Defined Benefit (PERA DB) plan</strong>.</p><p>The retirement contributions that should have been deducted from your previous paychecks will be taken from your next paycheck. You will also be reimbursed for the OASDI (Social Security) contributions paid on those earlier checks.</p>${button('Continue','You still need to elect your benefits','benefits','primary')}`));}
-function benefits(){shell(card(`<div class="eyebrow">Benefit elections</div><h2>You finally had a chance to elect your benefits.</h2><p>You add your <strong>fiancé</strong> to your medical plan because she does not currently have health insurance.</p><p>Your coverage is effective back to your eligibility date, so the premiums that were not collected from your earlier paychecks are still owed.</p>${button('See your June 17 paycheck','The catch-up deductions are applied','june17','primary')}`));}
+function june4(){shell(card(`<div class="eyebrow">Paycheck 2</div><h2>June 4</h2><div class="money">$1,400</div><p>Your benefit deductions still have not started. Your May premiums remain outstanding.</p>${ledger([['Average Denver 2-bedroom rent',money(CONFIG.rentMonthly)],['Set aside half for June rent',`−${money(CONFIG.rentHalf)}`,'negative'],['Cash remaining from this check',money(CONFIG.june4CashAfterRentReserve),'positive']])}<p class="note">The remaining $${CONFIG.june4CashAfterRentReserve} stays available. It does not disappear from the simulation.</p>${button('Continue','','retirement','primary')}`));}
+function retirement(){shell(card(`<div class="eyebrow">Mandatory retirement</div><p>You were eligible to get the PERA Choice election and</p><h2>You forgot to elect a mandatory retirement plan.</h2><p>You are defaulted into the <strong>PERA Defined Benefit (PERA DB) plan</strong>.</p><p>The retirement contributions that should have been deducted from your previous paychecks will be taken from your next paycheck. You will also be reimbursed for the OASDI (Social Security) contributions paid on those earlier checks.</p>${button('Continue','You still need to elect your benefits','benefits','primary')}`));}
+function benefits(){shell(card(`<div class="eyebrow">Benefit elections</div><h2>You finally had a chance to elect your benefits.</h2><p>Your <strong>fiancé</strong> recently lost her job, so you add her to your medical plan because she does not currently have health insurance.</p><p>Your coverage is effective back to your eligibility date, so the premiums that were not collected from your earlier paychecks are still owed.</p>${button('See your June 17 paycheck','The catch-up deductions are applied','june17','primary')}`));}
 function june17(){
   const available = CONFIG.june4CashAfterRentReserve + CONFIG.june17NetEstimate;
   shell(`<div class="grid">${card(`<div class="eyebrow">Paycheck 3</div><h2>June 17: the catch-up paycheck</h2><div class="money">${money(CONFIG.june17Gross)}</div><p>Gross earnings</p>${ledger([['May + June insurance premiums',`−${money(CONFIG.june17BenefitCatchupAndCurrent)}`,'negative'],['Current PERA DB',`−${money(CONFIG.june17CurrentPera)}`,'negative'],['Prior PERA catch-up',`−${money(CONFIG.peraCatchup)}`,'negative'],['Estimated tax from 2 months of imputed income',`−${money(CONFIG.imputedTaxCatchup)}`,'negative'],['OASDI reimbursement',`+${money(CONFIG.oasdiRefund)}`,'positive']])}`)}${card(`<div class="eyebrow">Estimated paycheck</div><div class="money">${money(CONFIG.june17NetEstimate)}</div>${ledger([['Cash left from June 4',money(CONFIG.june4CashAfterRentReserve)],['June 17 paycheck',`+${money(CONFIG.june17NetEstimate)}`],['Cash available',money(available),'positive',true]])}<p>You still owe the other half of June rent: <strong>${money(CONFIG.rentHalf)}</strong>.</p>${button('Try to make it to the next paycheck',`${money(available)} available`,'start','primary')}`)}</div>`);
@@ -122,31 +123,35 @@ function outOfMoney(){
   shell(`${card(`<div class="eyebrow">The paycheck effect</div><h1>You're out of money.</h1><p class="lead">It has been <strong>${state.day} days</strong> since the June 17 catch-up paycheck.</p>`, 'danger-box')}
   <div class="grid three">${card(`<label>Cash available</label><div class="money small">$0</div>`)}${card(`<label>Late fees</label><div class="money small">${money(state.lateFees)}</div>`)}${card(`<label>Needs delayed or missed</label><div class="money small">${state.missed.length}</div>`)}</div>
   ${card(`<h2>Where did the money go?</h2><table><thead><tr><th>Category</th><th>Spent</th></tr></thead><tbody>${Object.entries(totals).filter(x=>x[1]>0).map(([k,v])=>`<tr><td>${k}</td><td>${money(v)}</td></tr>`).join('')}</tbody></table><p class="note">This summary reflects the choices you made in the simulation.</p>`)}
-  ${card(`<div class="eyebrow">Now change only the benefit recovery method</div><h2>Standardized 1.5x Recovery with Net Pay Safeguard</h2><ul><li>Missed <strong>benefit deductions only</strong> are recovered at 1.5× the normal benefit deduction across subsequent pay periods.</li><li>A minimum <strong>${money(CONFIG.netPaySafeguard)} net pay</strong> must remain after deductions.</li><li>If the full 1.5× benefit catch-up would push pay below the safeguard, the remaining benefit correction automatically carries forward.</li><li>PERA catch-up, current PERA, imputed-income taxation and other payroll items are unchanged.</li></ul>${button('Compare the recovery method','Apply the safeguard to the June 17 benefit catch-up','compare','gold')}`)}
+  ${card(`<div class="eyebrow">Now change only the benefit recovery method</div><h2>Standardized 1.5× Recovery with $750 Net Pay Floor</h2><ul><li>Missed <strong>benefit deductions only</strong> are recovered at 1.5× the normal benefit deduction across subsequent pay periods.</li><li>A <strong>${money(CONFIG.netPaySafeguard)} net pay floor</strong> applies to recovery of missed benefit deductions.</li><li>If missed-benefit recovery would reduce net pay below the floor, that recovery is reduced or deferred and the remaining correction automatically carries forward.</li><li>PERA catch-up, current PERA, imputed-income taxation and other payroll items are unchanged.</li></ul>${button('Compare the recovery method','Apply the $750 floor to the June 17 benefit catch-up','compare','gold')}`)}
   ${button('Play again','Make different choices','restart')}`);
 }
 
 function compareRecovery(){
-  /* Benefit-only counterfactual. The original model has $240 current + $240 missed benefits on June 17.
-     Under 1.5x recovery: current $240 + catch-up target $120 (0.5x extra beyond current), rather than $480 total.
-     This returns $120 to June 17 net pay. The $120 remaining missed premium carries forward.
-     The $250 safeguard is then tested against the modeled net. Since alternative net is $475, safeguard does not further reduce collection.
+  /* Benefit-only counterfactual.
+     Current model: $240 current benefit premium + $240 missed benefit premium are collected on June 17.
+     Standardized 1.5x recovery would ordinarily collect the $240 current premium plus $120 of catch-up.
+     The $750 floor applies ONLY to the missed-benefit catch-up. Other payroll items are unchanged.
+     Removing all $240 of missed-benefit recovery raises modeled net from $355 to $595. Because other
+     deductions already leave net below $750, no missed-benefit catch-up can be collected on June 17.
   */
   const originalNet=CONFIG.june17NetEstimate;
-  const missedBenefit=CONFIG.totalBenefitCatchup;
-  const catchupCollected=Math.min(missedBenefit, CONFIG.normalBenefitDeduction*(CONFIG.benefitRecoveryMultiplier-1));
-  let altNet=originalNet + (missedBenefit-catchupCollected);
-  let actualCatchup=catchupCollected;
-  if(altNet<CONFIG.netPaySafeguard){const needed=CONFIG.netPaySafeguard-altNet;actualCatchup=Math.max(0,actualCatchup-needed);altNet=CONFIG.netPaySafeguard}
+  const missedBenefit=CONFIG.missedBenefitPremium;
+  const netBeforeMissedBenefitRecovery=originalNet+missedBenefit;
+  const standardCatchupTarget=Math.min(missedBenefit,CONFIG.normalBenefitDeduction*(CONFIG.benefitRecoveryMultiplier-1));
+  const roomAboveFloor=Math.max(0,netBeforeMissedBenefitRecovery-CONFIG.netPaySafeguard);
+  const actualCatchup=Math.min(standardCatchupTarget,roomAboveFloor);
+  const altNet=netBeforeMissedBenefitRecovery-actualCatchup;
   const carry=missedBenefit-actualCatchup;
   const extra=altNet-originalNet;
-  const survivalMessage=extra>0?`The employee would have started the June 17 period with <strong>${money(extra)} more cash</strong>. The remaining ${money(carry)} of missed benefit premiums would carry forward and be recovered on later payrolls subject to the same safeguard.`:'The safeguard would not change this modeled paycheck.';
+  const floorNote=altNet<CONFIG.netPaySafeguard
+    ? `Even with <strong>$0</strong> of missed-benefit catch-up collected, the modeled paycheck is ${money(altNet)} because PERA catch-up, current deductions and imputed-income taxation still apply. The $750 floor prevents additional <em>benefit</em> recovery; it does not override those other deductions.`
+    : `The benefit recovery is limited so modeled net pay does not fall below ${money(CONFIG.netPaySafeguard)}.`;
   shell(`${card(`<div class="eyebrow">Benefit-only policy comparison</div><h1>Same amount owed. Different timing.</h1><p class="lead">All PERA and imputed-income assumptions remain unchanged. Only the missed benefit premium recovery changes.</p>`, 'good-box')}
-  <div class="grid">${card(`<h3>Current modeled recovery</h3>${ledger([['June 17 estimated net pay',money(originalNet)],['Missed benefit premium carried forward','$0'],['Benefit catch-up timing','Collected immediately']])}`)}${card(`<h3>1.5× + $250 safeguard</h3>${ledger([['June 17 estimated net pay',money(altNet),'positive'],['Benefit catch-up collected',money(actualCatchup)],['Missed benefit premium carried forward',money(carry)],['Minimum net pay safeguard',money(CONFIG.netPaySafeguard)]])}`)}</div>
-  ${card(`<h2>What changes?</h2><p>${survivalMessage}</p><p><strong>The employee still owes the full missed benefit premium.</strong> This approach changes when it is recovered, not whether it is recovered.</p><p class="note">This is an illustrative comparison based on the scenario's simplified payroll assumptions, not an official CU payroll calculation.</p>`)}
+  <div class="grid">${card(`<h3>Current modeled recovery</h3>${ledger([['June 17 estimated net pay',money(originalNet)],['Missed benefit premium collected',money(missedBenefit)],['Missed benefit premium carried forward','$0']])}`)}${card(`<h3>1.5× + ${money(CONFIG.netPaySafeguard)} floor</h3>${ledger([['June 17 estimated net pay',money(altNet),'positive'],['Benefit catch-up collected',money(actualCatchup)],['Missed benefit premium carried forward',money(carry)],['Net pay floor',money(CONFIG.netPaySafeguard)]])}`)}</div>
+  ${card(`<h2>What changes?</h2><p>The employee starts the June 17 period with <strong>${money(extra)} more cash</strong> because the missed benefit premium is carried forward instead of being recovered from this check.</p><p>${floorNote}</p><p><strong>The employee still owes the full missed benefit premium.</strong> This approach changes when it is recovered, not whether it is recovered.</p><p class="note">This is an illustrative comparison based on the scenario's simplified payroll assumptions, not an official CU payroll calculation.</p>`)}
   ${button('Review assumptions & sources','See the data behind the simulation','assumptions','primary')}${button('Play again','Try another path','restart')}`)
 }
-
 function assumptions(){
   shell(`<div class="hero"><div class="eyebrow">Transparency</div><h1>Assumptions &amp; sources</h1><p class="lead">The simulation intentionally uses conservative, visible assumptions so the experience can be challenged, refined and updated.</p>
   ${card(`<h2>Scenario assumptions</h2><table><tbody>
@@ -157,7 +162,7 @@ function assumptions(){
   <tr><th>Tutoring</th><td>Denver math tutor benchmark rounded to <strong>${money(CONFIG.tutor)}/hour</strong>.</td></tr>
   <tr><th>Dental</th><td>Colorado average root canal $1,049 and porcelain crown $1,404. Scenario applies 30% member share to root canal and 50% to crown.</td></tr>
   <tr><th>Payroll</th><td>Illustrative CU scenario supplied for this project. June 17 net pay is modeled at <strong>${money(CONFIG.june17NetEstimate)}</strong>; ongoing pay at <strong>${money(CONFIG.ongoingNetEstimate)}</strong>. These are not official payroll estimates.</td></tr>
-  <tr><th>Alternative recovery</th><td>Missed benefit deductions only: 1.5× recovery with a <strong>${money(CONFIG.netPaySafeguard)}</strong> minimum net-pay safeguard. Other payroll corrections are unchanged.</td></tr>
+  <tr><th>Alternative recovery</th><td>Missed benefit deductions only: 1.5× recovery with a <strong>${money(CONFIG.netPaySafeguard)}</strong> net-pay floor. Other payroll corrections are unchanged.</td></tr>
   </tbody></table>`)}
   ${card(`<h2>Public sources</h2><ul class="source-list">
     <li><a href="https://www.apartments.com/rent-market-trends/denver-co/" target="_blank" rel="noopener">Apartments.com — Denver rental market trends</a>: November 2026 average 2-bedroom rent of $2,118.</li>
