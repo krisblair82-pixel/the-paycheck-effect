@@ -22,9 +22,8 @@ const CONFIG = {
   tutor: 26,
   rootCanalEmployee: 315,
   crownEmployee: 702,
-  netPaySafeguard: 750,
   missedBenefitPremium: 240,
-  normalBenefitDeduction: 240,
+  normalBenefitDeduction: 120,
   benefitRecoveryMultiplier: 1.5
 };
 
@@ -123,33 +122,28 @@ function outOfMoney(){
   shell(`${card(`<div class="eyebrow">The paycheck effect</div><h1>You're out of money.</h1><p class="lead">It has been <strong>${state.day} days</strong> since the June 17 catch-up paycheck.</p>`, 'danger-box')}
   <div class="grid three">${card(`<label>Cash available</label><div class="money small">$0</div>`)}${card(`<label>Late fees</label><div class="money small">${money(state.lateFees)}</div>`)}${card(`<label>Needs delayed or missed</label><div class="money small">${state.missed.length}</div>`)}</div>
   ${card(`<h2>Where did the money go?</h2><table><thead><tr><th>Category</th><th>Spent</th></tr></thead><tbody>${Object.entries(totals).filter(x=>x[1]>0).map(([k,v])=>`<tr><td>${k}</td><td>${money(v)}</td></tr>`).join('')}</tbody></table><p class="note">This summary reflects the choices you made in the simulation.</p>`)}
-  ${card(`<div class="eyebrow">Now change only the benefit recovery method</div><h2>Standardized 1.5× Recovery with $750 Net Pay Floor</h2><ul><li>Missed <strong>benefit deductions only</strong> are recovered at 1.5× the normal benefit deduction across subsequent pay periods.</li><li>A <strong>${money(CONFIG.netPaySafeguard)} net pay floor</strong> applies to recovery of missed benefit deductions.</li><li>If missed-benefit recovery would reduce net pay below the floor, that recovery is reduced or deferred and the remaining correction automatically carries forward.</li><li>PERA catch-up, current PERA, imputed-income taxation and other payroll items are unchanged.</li></ul>${button('Compare the recovery method','Apply the $750 floor to the June 17 benefit catch-up','compare','gold')}`)}
+  ${card(`<div class="eyebrow">Now change only the benefit recovery method</div><h2>Standardized 1.5× Recovery</h2><ul><li>Missed <strong>benefit deductions only</strong> are recovered by limiting the total benefit deduction to 1.5× the normal per-paycheck benefit deduction.</li><li>With a normal benefit deduction of <strong>${money(CONFIG.normalBenefitDeduction)}</strong>, the employee pays the normal ${money(CONFIG.normalBenefitDeduction)} plus <strong>${money(CONFIG.normalBenefitDeduction * (CONFIG.benefitRecoveryMultiplier-1))}</strong> toward the missed premium each paycheck.</li><li>Any remaining missed premium automatically carries forward until fully recovered.</li><li>PERA catch-up, current PERA, imputed-income taxation and other payroll items are unchanged.</li></ul>${button('Compare the recovery method','Apply flat 1.5× benefit recovery to the June 17 paycheck','compare','gold')}`)}
   ${button('Play again','Make different choices','restart')}`);
 }
 
 function compareRecovery(){
   /* Benefit-only counterfactual.
-     Current model: $240 current benefit premium + $240 missed benefit premium are collected on June 17.
-     Standardized 1.5x recovery would ordinarily collect the $240 current premium plus $120 of catch-up.
-     The $750 floor applies ONLY to the missed-benefit catch-up. Other payroll items are unchanged.
-     Removing all $240 of missed-benefit recovery raises modeled net from $355 to $595. Because other
-     deductions already leave net below $750, no missed-benefit catch-up can be collected on June 17.
+     Current model: the full $240 missed benefit premium is recovered on June 17.
+     Flat 1.5x recovery: normal per-paycheck benefit deduction is $120, so total benefits
+     are limited to $180: $120 current + $60 catch-up. The remaining missed premium carries forward.
+     PERA, imputed-income taxation and all other payroll items remain unchanged.
   */
   const originalNet=CONFIG.june17NetEstimate;
   const missedBenefit=CONFIG.missedBenefitPremium;
-  const netBeforeMissedBenefitRecovery=originalNet+missedBenefit;
-  const standardCatchupTarget=Math.min(missedBenefit,CONFIG.normalBenefitDeduction*(CONFIG.benefitRecoveryMultiplier-1));
-  const roomAboveFloor=Math.max(0,netBeforeMissedBenefitRecovery-CONFIG.netPaySafeguard);
-  const actualCatchup=Math.min(standardCatchupTarget,roomAboveFloor);
-  const altNet=netBeforeMissedBenefitRecovery-actualCatchup;
+  const catchupPerPaycheck=CONFIG.normalBenefitDeduction*(CONFIG.benefitRecoveryMultiplier-1);
+  const actualCatchup=Math.min(missedBenefit,catchupPerPaycheck);
+  const reductionInRecovery=missedBenefit-actualCatchup;
+  const altNet=originalNet+reductionInRecovery;
   const carry=missedBenefit-actualCatchup;
-  const extra=altNet-originalNet;
-  const floorNote=altNet<CONFIG.netPaySafeguard
-    ? `Even with <strong>$0</strong> of missed-benefit catch-up collected, the modeled paycheck is ${money(altNet)} because PERA catch-up, current deductions and imputed-income taxation still apply. The $750 floor prevents additional <em>benefit</em> recovery; it does not override those other deductions.`
-    : `The benefit recovery is limited so modeled net pay does not fall below ${money(CONFIG.netPaySafeguard)}.`;
+  const futureCatchupChecks=Math.ceil(carry/catchupPerPaycheck);
   shell(`${card(`<div class="eyebrow">Benefit-only policy comparison</div><h1>Same amount owed. Different timing.</h1><p class="lead">All PERA and imputed-income assumptions remain unchanged. Only the missed benefit premium recovery changes.</p>`, 'good-box')}
-  <div class="grid">${card(`<h3>Current modeled recovery</h3>${ledger([['June 17 estimated net pay',money(originalNet)],['Missed benefit premium collected',money(missedBenefit)],['Missed benefit premium carried forward','$0']])}`)}${card(`<h3>1.5× + ${money(CONFIG.netPaySafeguard)} floor</h3>${ledger([['June 17 estimated net pay',money(altNet),'positive'],['Benefit catch-up collected',money(actualCatchup)],['Missed benefit premium carried forward',money(carry)],['Net pay floor',money(CONFIG.netPaySafeguard)]])}`)}</div>
-  ${card(`<h2>What changes?</h2><p>The employee starts the June 17 period with <strong>${money(extra)} more cash</strong> because the missed benefit premium is carried forward instead of being recovered from this check.</p><p>${floorNote}</p><p><strong>The employee still owes the full missed benefit premium.</strong> This approach changes when it is recovered, not whether it is recovered.</p><p class="note">This is an illustrative comparison based on the scenario's simplified payroll assumptions, not an official CU payroll calculation.</p>`)}
+  <div class="grid">${card(`<h3>Current modeled recovery</h3>${ledger([['June 17 estimated net pay',money(originalNet)],['Missed benefit premium collected',money(missedBenefit)],['Missed benefit premium carried forward','$0']])}`)}${card(`<h3>Flat 1.5× recovery</h3>${ledger([['June 17 estimated net pay',money(altNet),'positive'],['Normal benefit deduction',money(CONFIG.normalBenefitDeduction)],['Benefit catch-up collected',money(actualCatchup)],['Total benefit deduction',money(CONFIG.normalBenefitDeduction+actualCatchup)],['Missed benefit premium carried forward',money(carry)]])}`)}</div>
+  ${card(`<h2>What changes?</h2><p>The employee keeps <strong>${money(reductionInRecovery)} more</strong> in the June 17 paycheck because only ${money(actualCatchup)} of the missed premium is recovered instead of ${money(missedBenefit)}.</p><p>The remaining <strong>${money(carry)}</strong> carries forward. At ${money(catchupPerPaycheck)} of additional catch-up per paycheck, it would take approximately <strong>${futureCatchupChecks} more paychecks</strong> to finish recovering that balance, assuming no new missed deductions.</p><p><strong>Nothing is forgiven.</strong> The full missed benefit premium is still recovered; only the timing changes.</p><p class="note">This is an illustrative comparison based on the scenario's simplified payroll assumptions, not an official CU payroll calculation.</p>`)}
   ${button('Review assumptions & sources','See the data behind the simulation','assumptions','primary')}${button('Play again','Try another path','restart')}`)
 }
 function assumptions(){
@@ -162,7 +156,7 @@ function assumptions(){
   <tr><th>Tutoring</th><td>Denver math tutor benchmark rounded to <strong>${money(CONFIG.tutor)}/hour</strong>.</td></tr>
   <tr><th>Dental</th><td>Colorado average root canal $1,049 and porcelain crown $1,404. Scenario applies 30% member share to root canal and 50% to crown.</td></tr>
   <tr><th>Payroll</th><td>Illustrative CU scenario supplied for this project. June 17 net pay is modeled at <strong>${money(CONFIG.june17NetEstimate)}</strong>; ongoing pay at <strong>${money(CONFIG.ongoingNetEstimate)}</strong>. These are not official payroll estimates.</td></tr>
-  <tr><th>Alternative recovery</th><td>Missed benefit deductions only: 1.5× recovery with a <strong>${money(CONFIG.netPaySafeguard)}</strong> net-pay floor. Other payroll corrections are unchanged.</td></tr>
+  <tr><th>Alternative recovery</th><td>Missed benefit deductions only: flat 1.5× recovery. A normal $120 benefit deduction becomes $180 while a missed premium remains: $120 current + $60 catch-up. Other payroll corrections are unchanged.</td></tr>
   </tbody></table>`)}
   ${card(`<h2>Public sources</h2><ul class="source-list">
     <li><a href="https://www.apartments.com/rent-market-trends/denver-co/" target="_blank" rel="noopener">Apartments.com — Denver rental market trends</a>: November 2026 average 2-bedroom rent of $2,118.</li>
